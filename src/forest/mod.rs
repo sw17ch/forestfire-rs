@@ -2,14 +2,9 @@ use std::fmt;
 
 #[derive(PartialEq, Debug)]
 pub struct Forest {
-    pub trees: Vec<Tree>,
+    pub trees: Vec<TreeState>,
     width: usize,
     height: usize,
-}
-
-#[derive(PartialEq, Debug)]
-pub struct Tree {
-    pub state: TreeState,
 }
 
 #[derive(PartialEq, Debug, Copy, Clone)]
@@ -25,18 +20,15 @@ pub struct Coord {
     pub y: usize,
 }
 
-// A grid represented as a vector. (0,0) is the top left corner.
-// struct Grid<T> {
-//     pub vec: Vec<T>,
-//     width: usize,
-//     height: usize,
-// }
+macro_rules! coord {
+    ($x:expr, $y:expr) => (Coord { x:$x, y:$y });
+}
 
 impl Forest {
     pub fn new(width: usize, height: usize) -> Forest {
-        let mut v: Vec<Tree> = Vec::with_capacity(width * height);
+        let mut v: Vec<TreeState> = Vec::with_capacity(width * height);
         for _ in 0..(width * height) {
-            v.push(Tree { state: TreeState::Alive });
+            v.push(TreeState::Alive);
         }
 
         Forest { width: width, height: height, trees: v }
@@ -47,21 +39,22 @@ impl Forest {
     }
 
     pub fn light(&mut self) {
-        let center = coord_ix(self.width, self.width / 2, self.height / 2);
-        self.trees[center].state = TreeState::Burning;
+        let c = coord!(self.width / 2, self.height / 2);
+        let center = coord_ix(self.width, c);
+        self.trees[center] = TreeState::Burning;
     }
 
-    pub fn tree_at(&self, x: usize, y: usize) -> &Tree {
-        &self.trees[coord_ix(self.width, x,y)]
+    pub fn tree_at(&self, c: Coord) -> &TreeState {
+        &self.trees[coord_ix(self.width, c)]
     }
 
     pub fn burn(&mut self, prob_spread: f64, prob_burn_out: f64) {
-        let mut v: Vec<Tree> = Vec::with_capacity(self.trees.len());
+        let mut v: Vec<TreeState> = Vec::with_capacity(self.trees.len());
 
         let mut ix: usize = 0;
         for t in &self.trees[..] {
-            let new_state = match t.state {
-                TreeState::Alive => {
+            let new_state = match t {
+                &TreeState::Alive => {
                     let bns = self.num_burning_neighbors(ix_coord(self.width, ix));
                     if ::lighter::spark(bns, prob_spread) {
                         TreeState::Burning
@@ -69,24 +62,23 @@ impl Forest {
                         TreeState::Alive
                     }
                 },
-                TreeState::Burning => if ::lighter::burn_out(prob_burn_out) {
+                &TreeState::Burning => if ::lighter::burn_out(prob_burn_out) {
                     TreeState::Burned
                 } else {
                     TreeState::Burning
                 },
-                TreeState::Burned => TreeState::Burned,
+                &TreeState::Burned => TreeState::Burned,
             };
 
-            v.push(Tree { state: new_state });
+            v.push(new_state);
             ix += 1;
         }
         self.trees = v;
     }
 
     pub fn burning(&self) -> bool {
-        // TODO: what is this &thing[..] syntax?
         for t in &self.trees[..] {
-            if t.state == TreeState::Burning {
+            if t == &TreeState::Burning {
                 return true;
             }
         }
@@ -108,32 +100,21 @@ impl Forest {
 
     fn neighbor_states(&self, c: Coord) -> Vec<TreeState> {
         let ns = neighbors(self.width, self.height, c);
-        let ts = &self.trees;
-        ns.iter().map(|n| {
-            match ts.get(*n) {
-                Some(x) => x.state,
-                None => panic!("Bad index: {}", n),
-            }
-        }).collect()
+        let ts = &self.trees[..];
+        ns.iter().map(|n| { ts[*n] }).collect()
     }
 }
 
 impl fmt::Display for Forest {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f, "FOREST {} {}", self.width, self.height);
+        writeln!(f, "FOREST {} {}", self.width, self.height).ok();
         for y in 0..self.height {
             for x in 0..self.width {
-                write!(f, "{}", self.trees[coord_ix(self.width, x, y)]);
+                write!(f, "{}", self.trees[coord_ix(self.width, coord!(x,y))]).ok();
             }
-            writeln!(f, "");
+            writeln!(f, "").ok();
         }
         Ok(())
-    }
-}
-
-impl fmt::Display for Tree {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.state)
     }
 }
 
@@ -148,12 +129,12 @@ impl fmt::Display for TreeState {
     }
 }
 
-fn coord_ix(width: usize, x: usize, y: usize) -> usize {
-    width * y + x
+fn coord_ix(width: usize, c: Coord) -> usize {
+    width * c.y + c.x
 }
 
 fn ix_coord(width: usize, c: usize) -> Coord {
-    Coord { x: c / width, y: c % width }
+    coord!(c / width, c % width)
 }
 
 fn neighbors(width: usize, height: usize, c: Coord) -> Vec<usize> {
@@ -179,12 +160,11 @@ fn neighbors(width: usize, height: usize, c: Coord) -> Vec<usize> {
         let nx = (c.x as isize + cx) as usize;
         let ny = (c.y as isize + cy) as usize;
 
-        v.push(coord_ix(width, nx, ny));
+        v.push(coord_ix(width, coord!(nx, ny)));
     }
 
     v
 }
-
 
 #[test]
 fn test_forest_new() {
@@ -197,7 +177,7 @@ fn test_forest_new() {
 fn test_forest_light() {
     let mut f = Forest::new(3,3);
     f.light();
-    assert!(TreeState::Burning == f.tree_at(1,1).state);
+    assert!(TreeState::Burning == f.tree_at(coord!(1,1)).state);
 }
 
 #[test]
@@ -209,3 +189,8 @@ fn test_coord_ix() {
     assert!(c.y == 1);
 }
 
+#[test]
+fn macro_works() {
+    assert!(coord!(3,4).x == 3);
+    assert!(coord!(3,4).y == 4);
+}

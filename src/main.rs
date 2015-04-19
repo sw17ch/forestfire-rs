@@ -7,8 +7,12 @@ pub fn main() {
     f.light();
     println!("{}", f);
 
+    let mut iters = 0;
     while f.burning() {
-        f.burn(0.25, 0.25);
+        f.burn(0.10, 0.30);
         println!("{}", f);
+        iters += 1;
     }
+
+    println!("Iterations: {}", iters);
 }
