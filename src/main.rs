@@ -11,6 +11,10 @@ pub fn main() {
     while f.burning() {
         f.burn(0.10, 0.30);
         println!("{}", f);
+
+        // uncomment this to see this more as an animation
+        // std::thread::sleep_ms(250);
+
         iters += 1;
     }
 
