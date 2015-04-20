@@ -151,11 +151,8 @@ fn neighbors(width: usize, height: usize, c: Coord) -> Vec<usize> {
 
 
     for (cx, cy) in cs {
-        if 0 == xi && cx == -1 { continue };
-        if w - 1 == xi && cx == 1 { continue };
-
-        if 0 == yi && cy == -1 { continue };
-        if h - 1 == yi && cy == 1 { continue };
+        if xi + cx >= w || xi + cx < 0 { continue };
+        if yi + cy >= h || yi + cy < 0 { continue };
 
         let nx = (c.x as isize + cx) as usize;
         let ny = (c.y as isize + cy) as usize;
