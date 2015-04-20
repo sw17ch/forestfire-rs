@@ -9,6 +9,8 @@ neighboring burning tree and each burning tree has a 30% chance to burn out.
 Currently, the software is setup as a double-buffered mechanism. It's my
 intention to use this to introduce parallelism in the future.
 
+A screen-capture of a single [run is available](https://youtu.be/Trrow1D23nw).
+
 # Example
 
 Green trees are marked with a `^`. Burning trees are marked with a `#`. Burned
