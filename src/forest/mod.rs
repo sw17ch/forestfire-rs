@@ -26,10 +26,7 @@ macro_rules! coord {
 
 impl Forest {
     pub fn new(width: usize, height: usize) -> Forest {
-        let mut v: Vec<TreeState> = Vec::with_capacity(width * height);
-        for _ in 0..(width * height) {
-            v.push(TreeState::Alive);
-        }
+        let v = vec![TreeState::Alive; (width * height)];
 
         Forest { width: width, height: height, trees: v }
     }
