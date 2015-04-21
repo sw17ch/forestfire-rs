@@ -38,6 +38,7 @@ impl Forest {
     pub fn light(&mut self) {
         let c = coord!(self.width / 2, self.height / 2);
         let center = coord_ix(self.width, c);
+
         self.trees[center] = TreeState::Burning;
     }
 
@@ -74,25 +75,15 @@ impl Forest {
     }
 
     pub fn burning(&self) -> bool {
-        for t in &self.trees[..] {
-            if t == &TreeState::Burning {
-                return true;
-            }
-        }
-
-        return false;
+        self.trees
+            .iter()
+            .any(|x| *x == TreeState::Burning)
     }
 
     fn num_burning_neighbors(&self, c: Coord) -> usize {
-        let mut burning = 0;
-
-        for s in self.neighbor_states(c) {
-            if TreeState::Burning == s {
-                burning += 1;
-            }
-        }
-
-        burning
+        self.neighbor_states(c)
+            .iter()
+            .filter(|x| **x == TreeState::Burning).count()
     }
 
     fn neighbor_states(&self, c: Coord) -> Vec<TreeState> {
