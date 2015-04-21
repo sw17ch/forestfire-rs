@@ -1,7 +1,6 @@
 extern crate getopts;
 use getopts::Options;
 use std::env;
-use std::str::FromStr;
 
 extern crate forestfire;
 
@@ -31,18 +30,11 @@ pub fn main() {
         return;
     }
 
-    // Rather gnarly conversion from String -> u32
-    let delay = match option_matches.opt_str("frame-delay") {
-        Some(val) => { 
-            match u32::from_str(&val) {
-                Ok(d) => { d }
-                Err(_) => { 0u32 }
-            }
-        }
-        None => { 0u32 }
-    };
+    let delay = option_matches.opt_str("frame-delay")
+        .unwrap_or("0".to_string());
+    let delay = delay.parse().unwrap(); // we've got a valid value due to unwrap_or
 
-    let mut f = forestfire::forest::Forest::new(30,30);
+    let mut f = forestfire::forest::Forest::new(30, 30);
 
 
     f.light();
